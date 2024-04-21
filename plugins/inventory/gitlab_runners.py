@@ -84,8 +84,6 @@ from ansible.errors import AnsibleError, AnsibleParserError
 from ansible.module_utils.common.text.converters import to_native
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable
 
-from ansible_collections.community.general.plugins.plugin_utils.unsafe import make_unsafe
-
 try:
     import gitlab
     HAS_GITLAB = True
@@ -107,11 +105,11 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             else:
                 runners = gl.runners.all()
             for runner in runners:
-                host = make_unsafe(str(runner['id']))
+                host = str(runner['id'])
                 ip_address = runner['ip_address']
-                host_attrs = make_unsafe(vars(gl.runners.get(runner['id']))['_attrs'])
+                host_attrs = vars(gl.runners.get(runner['id']))['_attrs']
                 self.inventory.add_host(host, group='gitlab_runners')
-                self.inventory.set_variable(host, 'ansible_host', make_unsafe(ip_address))
+                self.inventory.set_variable(host, 'ansible_host', ip_address)
                 if self.get_option('verbose_output', True):
                     self.inventory.set_variable(host, 'gitlab_runner_attributes', host_attrs)
 

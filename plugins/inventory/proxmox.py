@@ -228,7 +228,6 @@ from ansible.module_utils.six.moves.urllib.parse import urlencode
 from ansible.utils.display import Display
 
 from ansible_collections.community.general.plugins.module_utils.version import LooseVersion
-from ansible_collections.community.general.plugins.plugin_utils.unsafe import make_unsafe
 
 # 3rd party imports
 try:
@@ -335,7 +334,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
             self._cache[self.cache_key][url] = data
 
-        return make_unsafe(self._cache[self.cache_key][url])
+        return self._cache[self.cache_key][url]
 
     def _get_nodes(self):
         return self._get_json("%s/api2/json/nodes" % self.proxmox_url)

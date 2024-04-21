@@ -123,9 +123,6 @@ compose:
 from ansible.errors import AnsibleError
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable, Cacheable
 
-from ansible_collections.community.general.plugins.plugin_utils.unsafe import make_unsafe
-
-
 try:
     from linode_api4 import LinodeClient
     from linode_api4.objects.linode import Instance
@@ -200,21 +197,20 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
     def _add_instances_to_groups(self):
         """Add instance names to their dynamic inventory groups."""
         for instance in self.instances:
-            self.inventory.add_host(make_unsafe(instance.label), group=instance.group)
+            self.inventory.add_host(instance.label, group=instance.group)
 
     def _add_hostvars_for_instances(self):
         """Add hostvars for instances in the dynamic inventory."""
         ip_style = self.get_option('ip_style')
         for instance in self.instances:
             hostvars = instance._raw_json
-            hostname = make_unsafe(instance.label)
             for hostvar_key in hostvars:
                 if ip_style == 'api' and hostvar_key in ['ipv4', 'ipv6']:
                     continue
                 self.inventory.set_variable(
-                    hostname,
+                    instance.label,
                     hostvar_key,
-                    make_unsafe(hostvars[hostvar_key])
+                    hostvars[hostvar_key]
                 )
             if ip_style == 'api':
                 ips = instance.ips.ipv4.public + instance.ips.ipv4.private
@@ -223,9 +219,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
                 for ip_type in set(ip.type for ip in ips):
                     self.inventory.set_variable(
-                        hostname,
+                        instance.label,
                         ip_type,
-                        make_unsafe(self._ip_data([ip for ip in ips if ip.type == ip_type]))
+                        self._ip_data([ip for ip in ips if ip.type == ip_type])
                     )
 
     def _ip_data(self, ip_list):
@@ -256,22 +252,21 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
         self._add_instances_to_groups()
         self._add_hostvars_for_instances()
         for instance in self.instances:
-            hostname = make_unsafe(instance.label)
-            variables = self.inventory.get_host(hostname).get_vars()
+            variables = self.inventory.get_host(instance.label).get_vars()
             self._add_host_to_composed_groups(
                 self.get_option('groups'),
                 variables,
-                hostname,
+                instance.label,
                 strict=strict)
             self._add_host_to_keyed_groups(
                 self.get_option('keyed_groups'),
                 variables,
-                hostname,
+                instance.label,
                 strict=strict)
             self._set_composite_vars(
                 self.get_option('compose'),
                 variables,
-                hostname,
+                instance.label,
                 strict=strict)
 
     def verify_file(self, path):
